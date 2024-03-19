@@ -1,7 +1,7 @@
-pandas
-streamlit
-requests
-BeautifulSoup
+pandas>=0.0.1
+streamlit>=0.0.1
+requests>=0.0.1
+BeautifulSoup>=0.0.1
 mysql-connector == 8.0.36
 
 
