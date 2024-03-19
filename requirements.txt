@@ -1,5 +1,5 @@
 pandas >=0.0.1
-streamlit >=20.0
+streamlit >=22.0.3
 BeautifulSoup >=0.0.1
 mysql-connector >= 8.0.36
 
