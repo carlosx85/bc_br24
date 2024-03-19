@@ -1,7 +1,7 @@
 pandas>=0.0.1
 streamlit>=24.0
 BeautifulSoup>=0.0.1
-mysql-connector == 8.0.36,
+mysql-connector == 8.0.36
 
 
 
