@@ -2,6 +2,9 @@ pandas
 streamlit
 requests
 BeautifulSoup
+mysql-connector
+
+
 
  
 
