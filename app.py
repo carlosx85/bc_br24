@@ -3,10 +3,10 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import mysql.connector
+import streamlit as st
 
 
-
-from bs4 import BeautifulSoup
+ 
 Ano    = 2023
 Rodada = 1
 url =  f'https://www.cbf.com.br/futebol-brasileiro/competicoes/campeonato-brasileiro-serie-a/{Ano}'
@@ -55,7 +55,7 @@ todos_os_dados = extrair_todos_os_dados(url)
 #display(todos_os_dados)
 
 
-
+ 
 cursor = conexao.cursor()
 
 
