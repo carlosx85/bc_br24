@@ -1,12 +1,11 @@
 # Correto 04-11hs
-import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import mysql.connector
 import streamlit as st
+import pandas as pd
+import numpy as np
 
-
- 
 Ano    = 2023
 Rodada = 1
 url =  f'https://www.cbf.com.br/futebol-brasileiro/competicoes/campeonato-brasileiro-serie-a/{Ano}'
@@ -55,9 +54,18 @@ todos_os_dados = extrair_todos_os_dados(url)
 #display(todos_os_dados)
 
 
- 
+
+# Conexão com o banco de dados
+conexao  = mysql.connector.connect(
+  host="mysql4.iphotel.com.br",
+  user="umotimoempreen02",
+  password="82es44fa2A!",
+  database="umotimoempreen02"
+)
 cursor = conexao.cursor()
 
+comandox = f'TRUNCATE TABLE Jogos_Site'
+cursor.execute(comandox)
 
 comandox = f'TRUNCATE TABLE Jogos_Site'
 cursor.execute(comandox)
@@ -88,27 +96,21 @@ comando4 = f'UPDATE Jogos_Site SET resultado_site = casa  where fora_gol <  casa
 cursor.execute(comando4)
 conexao.commit()
 
-#Inserir Rodada
-comando5 = f'UPDATE Jogos_Origem INNER JOIN Jogos_Site ON (Jogos_Origem.Fora = Jogos_Site.fora) AND (Jogos_Origem.Casa = Jogos_Site.casa) SET Jogos_Site.rodada = Jogos_Origem.Rodada'
-cursor.execute(comando5)
-conexao.commit()
 
 #Atualizar jogos Resultado     
-comando11 = 'UPDATE Jogos_Site INNER JOIN Jogos ON (Jogos_Site.rodada = Jogos.Rodada) AND (Jogos_Site.fora = Jogos.Fora) AND (Jogos_Site.casa = Jogos.Casa) SET Jogos.Resultado = Jogos_Site.resultado , Jogos.Mandante_Gol = Jogos_Site.casa_gol, Jogos.Visitante_Gol = Jogos_Site.fora_gol'
+comando11 = 'UPDATE Jogos SET Resultado = "Pendente" , Visitante_Gol = "", Mandante_Gol = "", Pontos ="0" WHERE StatusRodada LIKE "Ativo"'
 cursor.execute(comando11)
 conexao.commit()
 
 #Atualizar jogos Resultado     
-comando12 = 'UPDATE Jogos_Site INNER JOIN DePara_Mandante ON Jogos_Site.resultado_Site = DePara_Mandante.De SET Jogos_Site.resultado = DePara_Mandante.Mandante'
-cursor.execute(comando12)
+comando15 = 'UPDATE Jogos_Site INNER JOIN Jogos ON (Jogos_Site.rodada = Jogos.Rodada) AND (Jogos_Site.fora = Jogos.Fora) AND (Jogos_Site.casa = Jogos.Casa) AND (Jogos.StatusRodada = "Ativo")        SET Jogos.Data_Atualizacao = now() , Jogos.Resultado = Jogos_Site.resultado , Jogos.Mandante_Gol = Jogos_Site.casa_gol, Jogos.Visitante_Gol = Jogos_Site.fora_gol'
+cursor.execute(comando15)
 conexao.commit()
-
-#Inclui Pontuação/
-
-comando13 = 'UPDATE Jogos set Pontos = 0'
+ 
+comando13 = 'UPDATE Jogos set Pontos = 0 WHERE StatusRodada = "Ativo" '
 cursor.execute(comando13)
 conexao.commit()
 
-comando14 = 'UPDATE Jogos set Pontos = 1 where  resultado = palpite'
+comando14 = 'UPDATE Jogos set Pontos = 1 where  resultado = palpite and StatusRodada = "Ativo" '
 cursor.execute(comando14)
 conexao.commit()
