@@ -55,14 +55,7 @@ todos_os_dados = extrair_todos_os_dados(url)
 
 
 
-# Conexão com o banco de dados
-conexao  = mysql.connector.connect(
-  host="mysql4.iphotel.com.br",
-  user="umotimoempreen02",
-  password="82es44fa2A!",
-  database="umotimoempreen02"
-)
-cursor = conexao.cursor()
+
 
 comandox = f'TRUNCATE TABLE Jogos_Site'
 cursor.execute(comandox)
