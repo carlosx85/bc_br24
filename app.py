@@ -1,109 +1,109 @@
-# Correto 04-11hs
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import mysql.connector
-import streamlit as st
+
+Rodada_Atual= 28
+url = f'https://www.api-futebol.com.br/campeonato/campeonato-brasileiro/2024'
+urlx = f'https://www.api-futebol.com.br/campeonato/campeonato-brasileiro/2024/rodada/{Rodada_Atual}?stageSlug=fase-unica'
+
+headers ={}
+response = requests.get(url,headers=headers)
+soup = BeautifulSoup(response.content, 'html.parser') 
+
 import pandas as pd
-import numpy as np
 
-Ano    = 2023
-Rodada = 1
-url =  f'https://www.cbf.com.br/futebol-brasileiro/competicoes/campeonato-brasileiro-serie-a/{Ano}'
+# Supondo que as variáveis já estejam preenchidas com os elementos extraídos pelo BeautifulSoup
+Mandante   = soup.find_all('div', {'class': 'text-right'})
+Visitante  = soup.find_all('div', {'class': 'text-left'}) 
+Placar     = soup.find_all('div', {'class': 'small text-center'})
 
-# Função para extrair os dados de uma rodada específica
-def extrair_todos_os_dados(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    
-    mandantes  = soup.find_all('div', class_='time pull-left')
-    visitantes = soup.find_all('div', class_='time pull-right')
-    placares   = soup.find_all('strong', class_='partida-horario center-block')
-    titulos     = soup.find_all("img", class_="icon escudo x45 pull-left")
-    titulos1     = soup.find_all("img", class_="icon escudo x45 pull-right")
-    
-    lista_mandantes = []
-    lista_visitantes = []
-    lista_placares = []
-    lista_titulos = []
-    lista_titulos1 = []
+# Extrair o texto de cada elemento encontrado
+mandante_list = [element.get_text(strip=True) for element in Mandante if element.get_text(strip=True) not in ['', 'N/A']]
+visitante_list = [visitante.get_text(strip=True) for visitante in Visitante]
+placar_list = [placar.get_text(strip=True) for placar in Placar]
+max_length = max(len(mandante_list), len(visitante_list), len(placar_list))
 
-   # Iterando sobre os elementos encontrados e adicionando as informações às listas
-    for  mandante, visitante, placar, titulo, titulo1  in zip( mandantes, visitantes, placares, titulos,titulos1):        
-        lista_mandantes.append(mandante.text.strip())
-        lista_visitantes.append(visitante.text.strip())
-        lista_placares.append(placar.text.strip())   
-        lista_titulos.append (titulo.get("title"))
-        lista_titulos1.append (titulo1.get("title"))
-        
-        
-    df = pd.DataFrame({
-        'casa': lista_titulos1,
-        'fora': lista_titulos,
-        'placar': lista_placares
-    })
 
-    return df
-# URL da página com os dados do Campeonato Brasileiro Série A de 2023
-#url = f'https://www.cbf.com.br/futebol-brasileiro/competicoes/campeonato-brasileiro-serie-a/{Ano}'
+# Preencher listas menores com valores vazios para igualar o comprimento
+mandante_list  += [''] * (max_length - len(mandante_list))
+visitante_list += [''] * (max_length - len(visitante_list))
+placar_list    += [''] * (max_length - len(placar_list))
 
-# Extrair todos os dados
-todos_os_dados = extrair_todos_os_dados(url)
+# Criar um dicionário com as listas ajustadas para formar um DataFrame
+data = {
+    'Mandante': mandante_list,
+    'Placar': placar_list,
+    'Visitante': visitante_list
+}
 
-# Exibindo todos os jogos e suas respectivas rodadas
-#todos_os_dados
-#display(todos_os_dados)
+# Criar um DataFrame com as informações
+df = pd.DataFrame(data) 
+
+import mysql.connector
 
 
 
+cursor = engine.cursor()
 
+apagar = f'TRUNCATE TABLE Jogos_Resultado'
+cursor.execute(apagar)
 
-comandox = f'TRUNCATE TABLE Jogos_Site'
-cursor.execute(comandox)
-
-comandox = f'TRUNCATE TABLE Jogos_Site'
-cursor.execute(comandox)
-
-for index, row in todos_os_dados.iterrows():
-    sqlx="INSERT INTO Jogos_Site (casa,fora,placar,Data_atu) VALUES (%s,%s,%s, now())"
-    valx=(row['casa'],row['fora'],row['placar'])
+for index, row in df.iterrows():
+    sqlx= f'INSERT INTO Jogos_Resultado ( Mandante,Placar,Visitante,Data) VALUES (%s,%s,%s,Now())'
+    valx=(row['Mandante'],row['Placar'],row['Visitante'])
     cursor.execute(sqlx,valx)
-conexao.commit()
-   
-comando = f'DELETE FROM Jogos_Site WHERE  LENGTH(placar) <= 1'
-cursor.execute(comando) 
+    engine.commit() 
+    
+# Conexão com o banco de dados
+#Atualizar jogos Resultado     
+comando0 = 'DELETE FROM Jogos_Resultado WHERE Placar LIKE "x"'
+cursor.execute(comando0)
+engine.commit()
 
-
-comando1 = f'UPDATE Jogos_Site SET casa_gol = LEFT(placar,1), fora_gol = right(placar,1)'
-cursor.execute(comando1)
-conexao.commit()
-
-comando2 = f'UPDATE Jogos_Site SET resultado_site = "Empate" where fora_gol = casa_gol'
+#Atualizar jogos Resultado     
+comando2 = 'UPDATE Jogos_Resultado INNER JOIN De_Para ON Jogos_Resultado.Visitante = De_Para.De SET Jogos_Resultado.Fora = De_Para.Para'
 cursor.execute(comando2)
-conexao.commit()
+engine.commit()
 
-comando3 = f'UPDATE Jogos_Site SET resultado_site = fora  where fora_gol >  casa_gol'
+#Atualizar jogos Resultado     
+comando22 = 'UPDATE Jogos_Resultado INNER JOIN De_Para ON Jogos_Resultado.Mandante = De_Para.De SET Jogos_Resultado.Casa = De_Para.Para'
+cursor.execute(comando22)
+engine.commit()
+
+
+#Atualizar jogos Resultado     
+comando3 = 'UPDATE Jogos_Resultado SET Jogos_Resultado.Casa_Gol = LEFT(Placar,1), Jogos_Resultado.Fora_Gol = RIGHT(Placar,1);'
 cursor.execute(comando3)
-conexao.commit()
-
-comando4 = f'UPDATE Jogos_Site SET resultado_site = casa  where fora_gol <  casa_gol'
+engine.commit() 
+    
+#Atualizar jogos Resultado     
+comando4 = "UPDATE  Jogos_Resultado SET Resultado = 'Empate'  WHERE Casa_Gol = Fora_Gol;"
 cursor.execute(comando4)
-conexao.commit()
+engine.commit()  
+    
+#Atualizar jogos Resultado     
+comando5 = 'UPDATE  Jogos_Resultado SET Resultado = Casa  WHERE Casa_Gol > Fora_Gol;'
+cursor.execute(comando5)
+engine.commit()  
+    
+ #Atualizar jogos Resultado     
+comando6 = 'UPDATE  Jogos_Resultado SET Resultado = Fora  WHERE Casa_Gol < Fora_Gol;'
+cursor.execute(comando6)
+engine.commit()    
 
+comando9 = 'UPDATE Jogos set Pontos = 0, Data = Now(), Resultado = Null  WHERE StatusRodada = "Ativo"  and StatusPalpite = "Preenchido" '
+cursor.execute(comando9)
+engine.commit()
 
 #Atualizar jogos Resultado     
-comando11 = 'UPDATE Jogos SET Resultado = "Pendente" , Visitante_Gol = "", Mandante_Gol = "", Pontos ="0" WHERE StatusRodada LIKE "Ativo"'
-cursor.execute(comando11)
-conexao.commit()
+comando8 = 'UPDATE Jogos_Resultado INNER JOIN Jogos ON Jogos_Resultado.Fora = Jogos.Visitante AND Jogos_Resultado.Casa = Jogos.Mandante SET Jogos.Mandante_Gol = Jogos_Resultado.Casa_Gol, Jogos.Visitante_Gol = Jogos_Resultado.Fora_Gol, Jogos.Resultado = Jogos_Resultado.Resultado;'
+cursor.execute(comando8)
+engine.commit()
 
-#Atualizar jogos Resultado     
-comando15 = 'UPDATE Jogos_Site INNER JOIN Jogos ON (Jogos_Site.rodada = Jogos.Rodada) AND (Jogos_Site.fora = Jogos.Fora) AND (Jogos_Site.casa = Jogos.Casa) AND (Jogos.StatusRodada = "Ativo")        SET Jogos.Data_Atualizacao = now() , Jogos.Resultado = Jogos_Site.resultado , Jogos.Mandante_Gol = Jogos_Site.casa_gol, Jogos.Visitante_Gol = Jogos_Site.fora_gol'
-cursor.execute(comando15)
-conexao.commit()
- 
-comando13 = 'UPDATE Jogos set Pontos = 0 WHERE StatusRodada = "Ativo" '
-cursor.execute(comando13)
-conexao.commit()
+comando10 = 'UPDATE Jogos set Pontos = 1  WHERE  resultado = palpite and StatusRodada = "Ativo" and StatusPalpite = "Preenchido" '
+cursor.execute(comando10)
+engine.commit() 
 
-comando14 = 'UPDATE Jogos set Pontos = 1 where  resultado = palpite and StatusRodada = "Ativo" '
-cursor.execute(comando14)
-conexao.commit()
+# 8. Fechar o cursor e a conexão
+cursor.close()
+engine.close()
